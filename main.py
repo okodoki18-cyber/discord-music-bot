@@ -1,7 +1,10 @@
-import discord
-from discord.ext import commands, tasks
-from config import DISCORD_TOKEN, PREFIX, EMBED_COLOR
 import os
+from pathlib import Path
+
+import discord
+from discord.ext import commands
+
+from config import DISCORD_TOKEN, PREFIX
 
 # Bot intents
 intents = discord.Intents.default()
@@ -12,8 +15,13 @@ bot = commands.Bot(command_prefix=PREFIX, intents=intents)
 
 # Load cogs
 async def load_cogs():
-    for filename in os.listdir('./cogs'):
-        if filename.endswith('.py'):
+    cogs_path = Path(__file__).parent / "cogs"
+    if not cogs_path.exists():
+        print("⚠️ cogs klasörü bulunamadı, uzantılar yüklenmedi.")
+        return
+
+    for filename in os.listdir(cogs_path):
+        if filename.endswith('.py') and not filename.startswith('__'):
             await bot.load_extension(f'cogs.{filename[:-3]}')
             print(f'✅ Loaded {filename}')
 
@@ -39,6 +47,9 @@ async def on_command_error(ctx, error):
     await ctx.send(embed=embed)
 
 async def main():
+    if not DISCORD_TOKEN:
+        raise RuntimeError("DISCORD_TOKEN .env dosyasında tanımlı değil.")
+
     await load_cogs()
     await bot.start(DISCORD_TOKEN)
 
